@@ -4,6 +4,7 @@
   "authors": [
     "David Wilcox <dave@davidgwilcox.com>"
   ],
+  "main": "main.js",
   "license": "MIT",
   "ignore": [
     "**/.*",
