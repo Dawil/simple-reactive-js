@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <script src="/test/vdom.js"></script>
+    <script src="/../main.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var vd = virtualDom;
+        function statefulView() {
+          window['name-output'].innerText = this.app.state;
+          window['input'].value = this.app.state;
+        }
+        function vdomView() {
+          return vd.h('div', [
+            vd.h('h1', 'Vdom Form'),
+            vd.h('input', {
+              value: this.app.state,
+              name: 'name'
+            }),
+            vd.h('p', 'Hello ' + this.app.state)
+          ]);
+        }
+
+        function mkConfig(view) {
+          return {
+            state: 'World',
+            view: view,
+            router: {
+              input: function(e) {
+                if (e.target.name === 'name')
+                  this.app.dispatch('update', e.target.value);
+              }
+            }, model: {
+              update: function(value) { this.app.state = value; }
+            }
+          };
+        }
+
+        var vdomApp     = new App(mkConfig(vdomView), vd)
+          .run(window.vdom);
+        var statefulApp = new App(mkConfig(statefulView))
+          .run(window.stateful);
+      });
+    </script>
+  </head>
+  <body>
+    <div id=vdom></div>
+    <div id=stateful>
+      <h1>Stateful Form</h1>
+      <label for="name">Name:</label>
+      <input name="name" id="input">
+      <p>Welcome <span id="name-output"></span>!</p>
+    </div>
+  </body>
+</html>
