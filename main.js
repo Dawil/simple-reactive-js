@@ -1,33 +1,43 @@
 'use strict';
 
-function App(config) {
-  this.config = config;
-  this.element = undefined;
-  this.vtree = undefined;
-  this.dispatching = 0;
+function App(config, domInterface) {
+  this.config         =  config;
+  this.state          =  this.config.state;
+  this.element        =  undefined;
+  this.vtree          =  undefined;
+  this.parentElement  =  undefined;
+  this.dispatching    =  0;
+  this.vd = domInterface ||
+  {
+    create: function() {},
+    diff:   function() {},
+    patch:  function() {}
+  };
 }
-App.prototype.render = function(eventType) {
-  var newVtree = this.config.view.call(this, eventType);
-  var diff = vd.diff(this.vtree, newVtree);
-  this.vtree = newVtree;
-  var that = this;
-  requestAnimationFrame(function update() {
-    that.element = vd.patch(that.element, diff);
-  });
-};
 App.prototype.run = function(parentElement) {
-  this.vtree = this.config.view.call(this, 'run');
-  this.element = vd.create( this.vtree );
-  parentElement.appendChild(  this.element );
-  parentElement.app = this;
+  parentElement.app   =  this;
+  this.parentElement  =  parentElement;
+  this.vtree          =  this.config.view.call(this.parentElement, 'run');
+  this.element        =  this.vd.create( this.vtree );
+  if (this.element) this.parentElement.appendChild( this.element );
 
   for (var i in this.config.router) {
-    parentElement.addEventListener(i, this.config.router[i]);
+    this.parentElement.addEventListener(i, this.config.router[i]);
   }
+  return this;
 };
 App.prototype.dispatch = function(eventType, event) {
   this.dispatching++;
-  this.config.model[eventType].call(this,event);
+  this.config.model[eventType].call(this.parentElement, event);
   this.dispatching--;
-  if (this.dispatching === 0) this.render(eventType);
+  if (this.dispatching === 0) this.render();
+};
+App.prototype.render = function() {
+  var newVtree = this.config.view.call(this.parentElement);
+  var diff     = this.vd.diff(this.vtree, newVtree);
+  this.vtree   = newVtree;
+  var that     = this;
+  if (diff) requestAnimationFrame(function update() {
+    that.element = that.vd.patch(that.element, diff);
+  });
 };
